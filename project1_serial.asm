@@ -49,10 +49,11 @@ $LIST
 DSEG at 30H
 x:   ds 4
 y:   ds 4
-bcd: ds 6
+bcd: ds 5
 VLED_ADC: ds 2
-roomtemp: ds 2
-vout: ds 2
+roomtemp: ds 1
+tcpl:	  ds 1
+;vout: ds 2
 
 BSEG
 mf: dbit 1
@@ -264,7 +265,7 @@ Forever:
 	anl ADCCON0, #0xF0
 	orl ADCCON0, #0x07 ; Select channel 7
 	lcall Read_ADC
-    
+
     ; Convert to voltage
 	mov x+0, R0
 	mov x+1, R1
@@ -283,17 +284,19 @@ Forever:
 	
 	lcall hex2bcd
 	lcall Display_formated_BCD
-	
+
 	; FOR TESTING PURPOSES ; SAVE THE VOLTAGE FROM LM355 IN VOUT 
 	; (AS IF IT IS THE THERMOCOUPLE VOUT (MAX 4.36, EXPECTED 2.99)
-	mov vout+0, x+0
-	mov vout+1, x+1
+	;mov vout+0, x+0
+	;mov vout+1, x+1
 	
 	; continue with room temperature conversion from LM355
 	Load_y(27300) ; put 2.73V in y ; 2.73 is a CONVERSION CONSTANT
 	lcall sub32 ; x - y stored in x ; x = 2.98 - 2.73
 	Load_y(100)	; 
 	lcall mul32 ; 100 * x
+
+	mov roomtemp, x+0
 	
 	lcall hex2bcd
 	lcall Display_formated_BCD3
@@ -304,10 +307,10 @@ Forever:
 	orl ADCCON0, #0x05 ; AIN5, channel 5
 	lcall Read_ADC ; vout stored in x
 	
-	mov x+0, R0
-	mov x+1, R1
-	mov x+2, #0
-	mov x+3, #0
+	mov tcpl, R0
+	;mov x+1, R1
+	;mov x+2, #0
+	;mov x+3, #0
 	Load_y(57) ; INVERSE OF (425(R1/R2) * 41x10^-6(slope)) = (0.017425)^-1 = 57.388, input 57
 	lcall mul32 
 	Load_y(230000)
