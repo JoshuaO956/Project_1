@@ -310,12 +310,11 @@ Forever:
 
 	mov b, #57
 	mov a, tcpl
-	mul ab
+	mul ab ; result stored in a
 
-	mov a, #1
-	add ab
+	inc a
 
-	mov a, roomtemp
+	mov b, roomtemp
 	add ab
 
 	;mov x+1, R1
