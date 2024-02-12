@@ -56,8 +56,8 @@ org 0x002B
 
 
 ;                     1234567890123456    <- This helps determine the location of the counter
-title_1:          db 'Temp:   C      s', 0
-title_2:          db 'Temp           C', 0
+title_1:          db 'Temp:   Dc     s', 0
+title_2:          db 'Temp    Dc     C', 0
 Lower:            db 's   ,   r   ,   ', 0
 Initial_Message:  db 'Timer:          ', 0
 
@@ -227,7 +227,7 @@ LCD_PB:
 	mov PB0, c
 	setb P0.3
 
-	;jnb PB0, PB0_Pressed
+	jnb PB0, PB0_Pressed
 	jnb PB1, PB1_Pressed
 	jnb PB2, PB2_Pressed
 	jnb PB3, PB3_Pressed
@@ -236,49 +236,23 @@ LCD_PB:
 LCD_PB_Done:	
 	ret
 
-;PB0_Pressed:
+PB0_Pressed:
 	
 	;if temp_time_mode = 1, set temp, otherwise set time
 
-;	mov a,temp_time_mode
-;	cjne a, #0x01, set_temp
-;	mov temp_time_mode, #0x00
-;	Set_Cursor(1, 1)
-;    Send_Constant_String(#title_1)
-;	ret
+	mov a,temp_time_mode
+	cjne a, #0x01, set_temp
+	mov temp_time_mode, #0x00
+	Set_Cursor(1, 1)
+    Send_Constant_String(#title_1)
+	ret
 
-;	set_temp:
-;		mov temp_time_mode, #0x01
-;		Set_Cursor(1, 1)
-;		Send_Constant_String(#title_2)
-;	ret
-
-Start_Stop_Button_Pressed:
-	
-	;Check for Start_Stop_Button press
-    setb P1.0
-    jb P1.0,  Start_Stop_Button_NOT_PRESSED_LABEL
-    ;Wait_Milli_Seconds(#1) ; Wait and check again
-    jb P1.0, Start_Stop_Button_NOT_PRESSED_LABEL
-
-	Start_Stop_Button_PRESSED_LABEL: jnb P1.0, Start_Stop_Button_PRESSED_LABEL
-    ; Button is pressed
-
-    mov a, On_Off     ; Check if timer is running
-    cjne a, #0x01, Start_Timer  ; If not running, start the timer
-    mov On_Off, #0x00  ; Stop the timer
-    ret
-
-Start_Timer:
-    mov On_Off, #0x01   ; Start the timer
-	lcall Timer2_Init
-	setb EA  
-    ret
-
-Start_Stop_Button_NOT_PRESSED_LABEL:
-    ret
-	
-
+	set_temp:
+		mov temp_time_mode, #0x01
+		Set_Cursor(1, 1)
+		Send_Constant_String(#title_2)
+	ret
+   
 PB1_Pressed:
 	mov a, temp_time_mode
 	cjne a, #0x01, dec_time_2
@@ -337,7 +311,31 @@ PB4_Pressed:
     Inc a
     mov soak_time, a
     ret
+    
+Start_Stop_Button_Pressed:
+	
+	;Check for Start_Stop_Button press
+    setb P1.0
+    jb P1.0,  Start_Stop_Button_NOT_PRESSED_LABEL
+    ;Wait_Milli_Seconds(#1) ; Wait and check again
+    jb P1.0, Start_Stop_Button_NOT_PRESSED_LABEL
 
+	Start_Stop_Button_PRESSED_LABEL: jnb P1.0, Start_Stop_Button_PRESSED_LABEL
+    ; Button is pressed
+
+    mov a, On_Off     ; Check if timer is running
+    cjne a, #0x01, Start_Timer  ; If not running, start the timer
+    mov On_Off, #0x00  ; Stop the timer
+    ret
+
+Start_Timer:
+    mov On_Off, #0x01   ; Start the timer
+	lcall Timer2_Init
+	setb EA  
+    ret
+
+Start_Stop_Button_NOT_PRESSED_LABEL:
+    ret
 
 Display_PushButtons_LCD:
 	Set_Cursor(2, 1)
@@ -461,8 +459,8 @@ main:
 	mov temp_time_mode, #0x00
     
     ; initial messages in LCD
-	;Set_Cursor(1, 1)
-    ;Send_Constant_String(#title_1)
+	Set_Cursor(1, 1)
+    Send_Constant_String(#title_1)
 	Set_Cursor(2, 1)
     Send_Constant_String(#Lower)
 	
@@ -472,10 +470,6 @@ Forever:
 	;lcall Display_PushButtons_LCD
 	lcall Start_Stop_Button_Pressed
 	
-	; Wait 50 ms between readings
-	mov R2, #50
-	lcall waitms
-
 	mov a, soak_temp
 	Set_Cursor(2, 2)
 	lcall SendToLCD
@@ -493,9 +487,9 @@ Forever:
 	lcall SendToLCD
 
 
-	Set_Cursor(1, 10)
+	Set_Cursor(1, 12)
 	Display_BCD(Timer_counter)
-	setb half_seconds_flag
+	
 	
 	ljmp Forever
 	
