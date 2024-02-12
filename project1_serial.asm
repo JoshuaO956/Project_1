@@ -300,12 +300,12 @@ Forever:
 	
 	; HERE WE CONVERT THE THERMOCOUPLE VOLTAGE TO TEMPERATURE
 	; read the thermocouple temperature from vout connected to pin 20 and store it in variable tcpltemp for now
-	;anl ADCCON0, #0xF0
-	;orl ADCCON0, #0x05 ; AIN5, channel 5
-	;lcall Read_ADC ; vout stored in x
+	anl ADCCON0, #0xF0
+	orl ADCCON0, #0x05 ; AIN5, channel 5
+	lcall Read_ADC ; vout stored in x
 	
-	mov x+0, vout+0
-	mov x+1, vout+1
+	mov x+0, R0
+	mov x+1, R1
 	mov x+2, #0
 	mov x+3, #0
 	Load_y(57) ; INVERSE OF (425(R1/R2) * 41x10^-6(slope)) = (0.017425)^-1 = 57.388, input 57
