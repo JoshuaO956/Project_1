@@ -306,15 +306,19 @@ Forever:
 	anl ADCCON0, #0xF0
 	orl ADCCON0, #0x05 ; AIN5, channel 5
 	lcall Read_ADC ; vout stored in x
-	
 	mov tcpl, R0
+
+	mov b, #57
+	mov a, tcpl
+	mulab
+
 	;mov x+1, R1
 	;mov x+2, #0
 	;mov x+3, #0
-	Load_y(57) ; INVERSE OF (425(R1/R2) * 41x10^-6(slope)) = (0.017425)^-1 = 57.388, input 57
-	lcall mul32 
-	Load_y(230000)
-	lcall add32 ; vout * (0.017425)^-1 = tcpl temp stored in x
+	;Load_y(57) ; INVERSE OF (425(R1/R2) * 41x10^-6(slope)) = (0.017425)^-1 = 57.388, input 57
+	;lcall mul32 
+	;Load_y(230000)
+	;lcall add32 ; vout * (0.017425)^-1 = tcpl temp stored in x
 	
 	; final temp stored in x; send to putty
 	lcall hex2bcd
