@@ -91,6 +91,8 @@ half_seconds_flag: dbit 1 ; Set to one in the ISR every time 500 ms had passed
 
 dseg at 0x30
 
+FSM_state:	ds 1
+temp: 		ds 1
 temp_time_mode: ds 1
 soak_temp:		ds 1
 reflow_temp:	ds 1
@@ -465,6 +467,77 @@ main:
     Send_Constant_String(#Lower)
 	
 Forever:
+
+FSM_loop: ;main loop for the finite state machine
+	mov a, FSM_state
+
+FSM_state0: ;loop for the start state
+	cjne a, #0, FSM_state1
+	mov pwm, #0
+	jnb	On_Off , FSM_state0_done
+	mov FSM_state, #1
+FSM_state0_done:
+	ljmp FSM_loop_done
+
+
+FSM_state1: ;loop for soak to ramp
+	cjne a, #1, FSM_state2
+	clr C
+	mov pwm, #100
+	mov Timer_counter, #0
+	mov a, soak_temp
+	subb a, temp
+	jnc FSM_state1_done
+	mov FSM1_state, #2
+FSM_state1_done:
+	ljmp FSM_loop_done
+
+
+FSM_state2: ;loop for pre-heat/soak
+	cjne a, #2, FSM_state3
+	clr C
+	mov pwm, #20
+	mov a, soak_time
+	subb a, Timer_counter
+	jnc FSM_state2_done
+	mov FSM_state, #3
+FSM_state2_done:
+	ljmp FSM_loop_done
+
+FSM_state3: ;loop for ramp to peak
+	cjne a, #3, FSM_state4
+	clr C
+	mov pwm, #100
+	mov a, reflow_temp
+	subb a, temp
+	jnc FSM_state3_done
+	mov FSM_state, #4
+FSM_state3_done:
+	ljmp FSM_loop_done
+
+FSM_state4: ;loop for reflow
+	cjne a, #4, FSM_state5
+	clr C
+	mov pwm, #20
+	mov a, reflow_time
+	subb a, Timer_counter
+	jnc FSM_state4_done
+	mov FSM_state, #5
+FSM_state4_done:
+	ljmp FSM_loop_done
+
+FSM_state5: ;loop for cooling
+	cjne a, #5, FSM_state6
+	clr C
+	mov pwm, #0
+	mov a, #60
+	subb a, temp
+	jc FSM_state3_done
+	mov FSM_state, #4
+FSM_state5_done:
+	ljmp FSM_loop_done
+
+FSM_loop_done:	;fsm is done
 
 	lcall LCD_PB
 	;lcall Display_PushButtons_LCD
