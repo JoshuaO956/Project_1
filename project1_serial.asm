@@ -310,7 +310,13 @@ Forever:
 
 	mov b, #57
 	mov a, tcpl
-	mulab
+	mul ab
+
+	mov a, #1
+	add ab
+
+	mov a, roomtemp
+	add ab
 
 	;mov x+1, R1
 	;mov x+2, #0
