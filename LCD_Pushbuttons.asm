@@ -560,8 +560,8 @@ FSM_loop_done:	;fsm is done
 	lcall SendToLCD
 
 
-	Set_Cursor(1, 12)
-	Display_BCD(Timer_counter)
+	;Set_Cursor(1, 12)
+	;Display_BCD(Timer_counter)
 	
 	
 	ljmp Forever
