@@ -31,7 +31,7 @@ ORG 0x0000
 	ljmp main
 
 ;                     1234567890123456    <- This helps determine the location of the counter
-test_message:     db 'Temp= xx.xx degC', 0
+;test_message:     db 'Temp= xx.xx degC', 0
 cseg
 ; These 'equ' must match the hardware wiring
 LCD_RS equ P1.3
@@ -51,8 +51,8 @@ x:   ds 4
 y:   ds 4
 bcd: ds 5
 VLED_ADC: ds 2
-;roomtemp: ds 4
-;vout: ds 2
+roomtemp: ds 4
+vout: ds 2
 
 BSEG
 mf: dbit 1
@@ -118,26 +118,22 @@ waitms:
 ; four decimal places.
 
 Display_formated_BCD:
-	push acc
-	push psw
 	Set_Cursor(2, 10)
-	;Display_char(#'T')
-	;Display_char(#'=')
-	;Display_BCD(bcd+1)
+	Display_char(#'T')
+	Display_char(#'=')
+	Display_BCD(bcd+1)
 	Display_BCD(bcd+0)
-	;Display_char(#'C')
-	pop psw
-	pop acc
+	Display_char(#'C')
 	ret
 	
 Display_formated_BCD2:
 	Set_Cursor(1, 7)
 	Display_char(#'T')
 	Display_char(#'=')
-	Display_BCD(bcd+2)
-	Send_BCD(bcd+2)
 	Display_BCD(bcd+1)
 	Send_BCD(bcd+1)
+	Display_BCD(bcd+0)
+	Send_BCD(bcd+0)
 	Display_char(#'C')
 	mov a, #'\r'
 	lcall putchar
@@ -168,17 +164,6 @@ Read_ADC:
 	
 ; Configure the serial port and baud rate
 InitSerialPort:
-
-	push AR0
-	push AR1
-	; Configure all the pins for biderectional I/O
-	mov	P3M1,#0x00
-	mov	P3M2,#0x00
-	mov	P1M1,#0x00
-	mov	P1M2,#0x00
-	mov	P0M1,#0x00
-	mov	P0M2,#0x00
-	
     ; Since the reset button bounces, we need to wait a bit before
     ; sending messages, otherwise we risk displaying gibberish!
     mov R1, #200
@@ -224,14 +209,13 @@ SendStringDone:
 
 main:
 	mov sp, #0x7f
-	push AR0
-	push AR1
 	lcall Init_All
     lcall LCD_4BIT
+    lcall InitSerialPort ; Initializes port where information will be sent to computer
     
- 	;initial messages in LCD
- 	Set_Cursor(1, 1)
-    Send_Constant_String(#test_message)
+    ; initial messages in LCD
+;	Set_Cursor(1, 1)
+;    Send_Constant_String(#test_message)
     
 Forever:
 
@@ -245,7 +229,7 @@ Forever:
 	
 	; Read the signal connected to AIN7
 	anl ADCCON0, #0xF0
-	orl ADCCON0, #0x05 ; Select channel 5
+	orl ADCCON0, #0x07 ; Select channel 7
 	lcall Read_ADC
     
     ; Convert to voltage
@@ -263,34 +247,33 @@ Forever:
 	mov y+2, #0
 	mov y+3, #0
 	lcall div32
-	
-	;Load_y(27300) ; put 2.73V in y ; 2.73 is a CONVERSION CONSTANT
-	;lcall sub32 ; x - y stored in x ; x = 2.98 - 2.73
-	;Load_y(100)	; 
-	;lcall mul32 ; 100 * x
+	Load_y(27300) ; put 2.73V in y ; 2.73 is a CONVERSION CONSTANT
+	lcall sub32 ; x - y stored in x ; x = 2.98 - 2.73
+	Load_y(100)	; 
+	lcall mul32 ; 100 * x
 	
 	; WE HAVE ROOMTEMP
 	
-	;mov roomtemp+0, x+0
-	;mov roomtemp+1, x+1
-	;mov roomtemp+2, x+2
-	;mov roomtemp+3, x+3
+	mov roomtemp+0, x+0
+	mov roomtemp+1, x+1
+	mov roomtemp+2, x+2
+	mov roomtemp+3, x+3
 	
 	;-----------------------------------------------------------------------------------------
 	; HERE WE CONVERT THE THERMOCOUPLE VOLTAGE TO TEMPERATURE
 	; read the thermocouple temperature from vout connected to pin 20 and store it in variable tcpltemp for now
-	;anl ADCCON0, #0xF0
-	;orl ADCCON0, #0x05 ; AIN5, channel 5
-	;lcall Read_ADC
-	;mov x+0, R0
-	;mov x+1, R1
-	;mov x+2, #0
-	;mov x+3, #0
+	anl ADCCON0, #0xF0
+	orl ADCCON0, #0x05 ; AIN5, channel 5
+	lcall Read_ADC
+	mov x+0, R0
+	mov x+1, R1
+	mov x+2, #0
+	mov x+3, #0
 	
-	;Load_y(49436)
-	;lcall mul32
-	;Load_y(4095)
-	;lcall div32
+	Load_y(49436)
+	lcall mul32
+	Load_y(4095)
+	lcall div32
 	Load_y(100)
 	lcall mul32 ; At this point the voltage is in microvolts
 	Load_y(425)
@@ -306,21 +289,13 @@ Forever:
 	lcall add32
 	
 	lcall hex2bcd
-	lcall Display_formated_BCD
+	lcall Display_formated_BCD2
 	
 	; Wait 500 ms between conversions
-	mov R2, #250
-	lcall waitms
-	mov R2, #250
-	lcall waitms
-	mov R2, #250
-	lcall waitms
-	mov R2, #250
-	lcall waitms	
-	
-	lcall InitSerialPort ; Initializes port where information will be sent to computer
+	Wait_Milli_Seconds(#250)
+	Wait_Milli_Seconds(#250)
+	Wait_Milli_Seconds(#250)
+	Wait_Milli_Seconds(#250)
 	
 	ljmp Forever
-	pop AR0
-	pop AR1
 END
