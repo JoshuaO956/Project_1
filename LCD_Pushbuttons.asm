@@ -448,11 +448,11 @@ main:
 	mov On_Off, #0x00 ;Off is 0, On is 1
 	mov Timer_counter, #0x00
 
-	lcall Init_All
+    lcall Init_All
     lcall LCD_4BIT
-	lcall Timer2_Init
+    lcall Timer2_Init
     setb EA   ; Enable Global interrupts
-	setb half_seconds_flag
+    setb half_seconds_flag
 
 	mov soak_temp, #0x00
 	mov reflow_temp, #0x00
