@@ -92,9 +92,10 @@ PB1:               dbit 1
 PB2:               dbit 1
 PB3:               dbit 1
 PB4:			   dbit 1
-On_Off:            dbit 1
 s_flag: dbit 1 
 mf: dbit 1
+
+
 
 dseg at 0x30
 
@@ -119,7 +120,7 @@ pwm_counter: ds 1 ; Free running counter 0, 1, 2, ..., 100, 0
 pwm: ds 1 ; pwm percentage
 seconds:      ds 1 ; a seconds counter attached to Timer 2 ISR
 Temperature: ds 1
-
+On_Off: ds 1
 
 
 CSEG
@@ -400,12 +401,11 @@ LCD_PB:
 	jnb PB2, PB2_Pressed
 	jnb PB3, PB3_Pressed
 	jnb PB4, PB4_Pressed
+	ret
 
 LCD_PB_Done:	
 	ret
 
-On_Off_button:
-	ret
 
 ;PB0_Pressed:
 	
@@ -519,10 +519,10 @@ main:
 	lcall InitSerialPort
   
 
-	mov soak_temp, #0x00
-	mov reflow_temp, #0x00
-	mov soak_time, #0x00
-	mov reflow_time, #0x00
+	mov soak_temp, #150
+	mov reflow_temp, #230
+	mov soak_time, #0x45
+	mov reflow_time, #0x30
 	mov temp_time_mode, #0x00
 	mov On_Off, #0x00
 	mov seconds, #0x00
@@ -535,7 +535,29 @@ main:
 	
 Forever:
 
-	;lcall Start_Stop_Button_Pressed
+	;Check for START_STOP_BUTTON press
+    setb START_STOP_BUTTON
+    jb START_STOP_BUTTON,  loop_after
+    ;Wait_Milli_Seconds(#1) ; Wait and check again
+    jb START_STOP_BUTTON, loop_after
+
+	START_STOP_BUTTON_PRESSED_LABEL: jnb START_STOP_BUTTON, START_STOP_BUTTON_PRESSED_LABEL
+    ; Button is pressed
+
+	;Check if switch is on/off
+
+	mov a, On_off
+	cjne a, #0x01, start_the_timer
+
+	mov On_Off, #0x00
+	sjmp loop_after
+
+start_the_timer:
+	mov On_Off, #0x01
+	sjmp loop_after
+
+
+loop_after:
 
 	; Read the 2.08V LED voltage connected to AIN0 on pin 6
 	anl ADCCON0, #0xF0
@@ -605,6 +627,8 @@ Forever:
 	;mov y+3, roomtemp+3
 	Load_y(22)
 	lcall add32
+
+	mov Temperature, x+0
 	
 	lcall hex2bcd
 	lcall Display_formated_BCD2
@@ -631,7 +655,7 @@ Forever:
 	Set_Cursor(2, 14)
 	lcall SendToLCD
 
-	Set_Cursor(1, 3)
+	Set_Cursor(1, 2)
 	Display_BCD(On_Off)
 
 	ljmp Forever
