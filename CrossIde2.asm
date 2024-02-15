@@ -101,6 +101,7 @@ mf: dbit 1
 
 
 dseg at 0x30
+temporary: ds 4
 chirp: ds 1
 FSM_state:	ds 1
 temp_time_mode: ds 1
@@ -566,7 +567,7 @@ main:
 
 	mov soak_temp, #150
 	mov reflow_temp, #230
-	mov soak_time, #045
+	mov soak_time, #030
 	mov reflow_time, #0x45
 	mov temp_time_mode, #0x00
 	mov On_Off, #0x00
@@ -618,6 +619,7 @@ FSM_loop: ;main loop for the finite state machine
 		jc exitend
 		mov FSM_state, #0
 		mov On_Off, #0
+		mov chirp, #5
 		ljmp FSM_loop_done
 		exitend:
 		
@@ -684,7 +686,7 @@ FSM_loop: ;main loop for the finite state machine
 		cjne a, #6, FSM_loop_done
 		clr C
 		mov pwm, #0
-		mov a, #24
+		mov a, #60
 		subb a, Temperature
 		jc FSM_state3_done
 		mov FSM_state, #0
@@ -786,6 +788,7 @@ loop_after:
 	
 	; Wait 500 ms between conversions
 	Wait_Milli_Seconds(#100)
+
 
 
 	; Wait 50 ms between conversions
